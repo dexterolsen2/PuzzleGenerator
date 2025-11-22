@@ -273,16 +273,21 @@
              * Reads the custom words textarea and updates the word count
              */
             function updateWordCountFromText() {
-                const words = customWordsEl.value
+                const rawWords = customWordsEl.value
                     .trim()
                     .split(/\s+/)
                     .filter((w) => w.length > 0);
 
-                if (words.length > 0) {
-                    wordCountEl.value = words.length;
+                const sanitizedWords = rawWords
+                    .map((w) => w.replace(/[^a-zA-Z]/g, "")) // Sanitize: remove non-letters
+                    .filter((w) => w.length >= 3); // Filter by length *after* sanitizing
+
+                if (rawWords.length > 0) {
+                    wordCountEl.value = sanitizedWords.length; // Show the count of *valid* sanitized words
                     wordCountEl.disabled = true;
                 } else {
                     wordCountEl.disabled = false;
+                    wordCountEl.value = 20; // Reset to default if empty
                 }
             }
 
@@ -290,15 +295,17 @@
              * Adds a new puzzle batch to the request list
              */
             function handleAddBatch() {
+                const sanitizedCustomWords = customWordsEl.value
+                    .trim()
+                    .split(/\s+/)
+                    .map((w) => w.replace(/[^a-zA-Z]/g, "")) // Sanitize
+                    .filter((w) => w.length >= 3); // Filter for length >= 3
+
                 const batch = {
                     puzzleType: puzzleTypeEl.value,
                     gridSize: parseInt(gridSizeEl.value, 10),
                     wordCount: parseInt(wordCountEl.value, 10),
-                    numPuzzles: parseInt(numPuzzlesEl.value, 10),
-                    customWords: customWordsEl.value
-                        .trim()
-                        .split(/\s+/)
-                        .filter((w) => w.length > 0),
+                    customWords: sanitizedCustomWords,
                     id: Date.now(), // Unique ID for removal
                 };
 
@@ -312,6 +319,10 @@
                     return;
                 }
                 if (batch.puzzleType === "wordsearch") {
+                    if (batch.customWords.length > 0) {
+                        // If custom words are provided, use their count
+                        batch.wordCount = batch.customWords.length;
+                    }
                     if (
                         isNaN(batch.wordCount) ||
                         batch.wordCount < 1 ||
