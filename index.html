@@ -3,12 +3,14 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Word Search PDF Generator</title>
+        <title>Word Search & Maze Generator</title>
         <!-- 1. Tailwind CSS for styling -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- 2. jsPDF library for creating the PDF -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <!-- 3. Inter font family -->
+        <!-- 3. JSZip library for creating .zip files -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <!-- 4. Inter font family -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -29,76 +31,144 @@
         </style>
     </head>
     <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
             <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
-                Word Search PDF Generator
+                Word Search & Maze Generator
             </h1>
 
-            <p class="text-gray-600 mb-6 text-center">
-                Choose how many puzzles you'd like to create for each size. (Max
-                100 total).
-            </p>
-
-            <!-- Input Section -->
-            <div class="space-y-4">
-                <!-- 20x20 Input -->
-                <div class="flex items-center justify-between">
-                    <label
-                        for="count20x20"
-                        class="text-lg font-medium text-gray-700"
-                        >20x20 Puzzles
-                        <span class="text-sm text-gray-500"
-                            >(20 words)</span
-                        ></label
-                    >
-                    <input
-                        type="number"
-                        id="count20x20"
-                        min="0"
-                        max="100"
-                        value="0"
-                        class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                    />
+            <!-- Add Puzzle Form -->
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">
+                    Add Puzzle Batch
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label
+                            for="puzzleType"
+                            class="block text-sm font-medium text-gray-700"
+                            >Puzzle Type</label
+                        >
+                        <select
+                            id="puzzleType"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                        >
+                            <option value="wordsearch">Word Search</option>
+                            <option value="maze">Maze</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            for="gridSize"
+                            class="block text-sm font-medium text-gray-700"
+                            >Grid Size (10-50)</label
+                        >
+                        <input
+                            type="number"
+                            id="gridSize"
+                            value="20"
+                            min="10"
+                            max="50"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="numPuzzles"
+                            class="block text-sm font-medium text-gray-700"
+                            >How many puzzles?</label
+                        >
+                        <input
+                            type="number"
+                            id="numPuzzles"
+                            value="1"
+                            min="1"
+                            max="100"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                </div>
+                <!-- Word Search Specific Options -->
+                <div id="wordSearchOptions">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="md:col-span-1">
+                            <label
+                                for="wordCount"
+                                class="block text-sm font-medium text-gray-700"
+                                >Word Count (1-100)</label
+                            >
+                            <input
+                                type="number"
+                                id="wordCount"
+                                value="20"
+                                min="1"
+                                max="100"
+                                class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            for="customWords"
+                            class="block text-sm font-medium text-gray-700"
+                            >Custom Words (Optional)</label
+                        >
+                        <textarea
+                            id="customWords"
+                            rows="3"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                            placeholder="Leave empty for random words. (One word per line or separated by spaces)"
+                        ></textarea>
+                    </div>
                 </div>
 
-                <!-- 30x30 Input -->
-                <div class="flex items-center justify-between">
-                    <label
-                        for="count30x30"
-                        class="text-lg font-medium text-gray-700"
-                        >30x30 Puzzles
-                        <span class="text-sm text-gray-500"
-                            >(40 words)</span
-                        ></label
-                    >
-                    <input
-                        type="number"
-                        id="count30x30"
-                        min="0"
-                        max="100"
-                        value="0"
-                        class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                    />
-                </div>
+                <button
+                    id="addBatchBtn"
+                    class="mt-4 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-all"
+                >
+                    Add Puzzle Batch
+                </button>
+            </div>
 
-                <!-- 40x40 Input -->
-                <div class="flex items-center justify-between">
+            <!-- Puzzle List -->
+            <h3 class="text-lg font-semibold text-gray-600">
+                Current Batches:
+            </h3>
+            <div
+                id="batchList"
+                class="mb-4 min-h-[40px] bg-gray-100 rounded-lg p-3 space-y-2"
+            >
+                <!-- Batches will be added here -->
+            </div>
+
+            <!-- Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
                     <label
-                        for="count40x40"
-                        class="text-lg font-medium text-gray-700"
-                        >40x40 Puzzles
-                        <span class="text-sm text-gray-500"
-                            >(50 words)</span
-                        ></label
+                        for="pageSize"
+                        class="block text-sm font-medium text-gray-700"
+                        >PDF Page Size</label
                     >
+                    <select
+                        id="pageSize"
+                        class="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                    >
+                        <option value="a4">A4 (Default)</option>
+                        <option value="letter">Letter</option>
+                        <option value="legal">Legal</option>
+                        <option value="tabloid">Tabloid</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-center md:mt-6">
                     <input
-                        type="number"
-                        id="count40x40"
-                        min="0"
-                        max="100"
-                        value="0"
-                        class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                        type="checkbox"
+                        id="generateImages"
+                        class="h-4 w-4 text-blue-600 border-gray-300 rounded"
                     />
+                    <label
+                        for="generateImages"
+                        class="ml-2 block text-sm font-medium text-gray-700"
+                        >Generate as Images (ZIP)</label
+                    >
                 </div>
             </div>
 
@@ -112,6 +182,12 @@
                 <div id="remainingText" class="text-gray-600">
                     (<span id="remainingCount">100</span> remaining)
                 </div>
+                <button
+                    id="clearBatches"
+                    class="text-sm text-red-500 hover:text-red-700 underline mt-1"
+                >
+                    Clear All
+                </button>
             </div>
 
             <!-- Generate Button -->
@@ -119,7 +195,7 @@
                 id="generateBtn"
                 class="w-full bg-blue-600 text-white font-bold px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Generate PDF
+                Generate
             </button>
 
             <!-- Status/Loading Message -->
@@ -134,11 +210,6 @@
         <script>
             // --- CONFIGURATION ---
             const MAX_TOTAL_PUZZLES = 100;
-            const PUZZLE_CONFIGS = {
-                "20x20": { gridSize: 20, wordCount: 20, keyLayout: "2x2" },
-                "30x30": { gridSize: 30, wordCount: 40, keyLayout: "2x2" },
-                "40x40": { gridSize: 40, wordCount: 50, keyLayout: "1x2" },
-            };
             // All 8 directions: [rowChange, colChange]
             const DIRECTIONS = [
                 [0, 1], // Horizontal (Right)
@@ -152,32 +223,224 @@
             ];
 
             // --- DOM ELEMENTS ---
-            const count20x20 = document.getElementById("count20x20");
-            const count30x30 = document.getElementById("count30x30");
-            const count40x40 = document.getElementById("count40x40");
+            const addBatchBtn = document.getElementById("addBatchBtn");
+            const batchListEl = document.getElementById("batchList");
+            const clearBatchesBtn = document.getElementById("clearBatches");
+
             const totalCountEl = document.getElementById("totalCount");
             const remainingCountEl = document.getElementById("remainingCount");
             const remainingTextEl = document.getElementById("remainingText");
+
+            const pageSizeEl = document.getElementById("pageSize");
+            const generateImagesEl = document.getElementById("generateImages");
             const generateBtn = document.getElementById("generateBtn");
             const statusEl = document.getElementById("status");
 
+            // Form Inputs
+            const puzzleTypeEl = document.getElementById("puzzleType");
+            const gridSizeEl = document.getElementById("gridSize");
+            const wordCountEl = document.getElementById("wordCount");
+            const numPuzzlesEl = document.getElementById("numPuzzles");
+            const customWordsEl = document.getElementById("customWords");
+            const wordSearchOptionsEl =
+                document.getElementById("wordSearchOptions");
+
+            // --- STATE ---
+            let puzzleRequests = [];
+
             // --- EVENT LISTENERS ---
+            addBatchBtn.addEventListener("click", handleAddBatch);
+            clearBatchesBtn.addEventListener("click", handleClearBatches);
             generateBtn.addEventListener("click", handleGenerateClick);
-            [count20x20, count30x30, count40x40].forEach((input) => {
-                input.addEventListener("input", updateCounter);
-            });
-            // Call once on load to set initial state
+            customWordsEl.addEventListener("input", updateWordCountFromText);
+            puzzleTypeEl.addEventListener("change", toggleWordSearchOptions);
+
             updateCounter();
+            toggleWordSearchOptions(); // Call on load
+
+            /**
+             * Hides/shows word search options based on puzzle type
+             */
+            function toggleWordSearchOptions() {
+                if (puzzleTypeEl.value === "maze") {
+                    wordSearchOptionsEl.style.display = "none";
+                } else {
+                    wordSearchOptionsEl.style.display = "block";
+                }
+            }
+
+            /**
+             * Reads the custom words textarea and updates the word count
+             */
+            function updateWordCountFromText() {
+                const words = customWordsEl.value
+                    .trim()
+                    .split(/\s+/)
+                    .filter((w) => w.length > 0);
+
+                if (words.length > 0) {
+                    wordCountEl.value = words.length;
+                    wordCountEl.disabled = true;
+                } else {
+                    wordCountEl.disabled = false;
+                }
+            }
+
+            /**
+             * Adds a new puzzle batch to the request list
+             */
+            function handleAddBatch() {
+                const batch = {
+                    puzzleType: puzzleTypeEl.value,
+                    gridSize: parseInt(gridSizeEl.value, 10),
+                    wordCount: parseInt(wordCountEl.value, 10),
+                    numPuzzles: parseInt(numPuzzlesEl.value, 10),
+                    customWords: customWordsEl.value
+                        .trim()
+                        .split(/\s+/)
+                        .filter((w) => w.length > 0),
+                    id: Date.now(), // Unique ID for removal
+                };
+
+                // Validation
+                if (
+                    isNaN(batch.gridSize) ||
+                    batch.gridSize < 10 ||
+                    batch.gridSize > 50
+                ) {
+                    setStatus("Grid size must be between 10 and 50.", "error");
+                    return;
+                }
+                if (batch.puzzleType === "wordsearch") {
+                    if (
+                        isNaN(batch.wordCount) ||
+                        batch.wordCount < 1 ||
+                        batch.wordCount > 100
+                    ) {
+                        setStatus(
+                            "Word count must be between 1 and 100.",
+                            "error",
+                        );
+                        return;
+                    }
+                } else {
+                    batch.wordCount = 0; // Mazes have 0 words
+                    batch.customWords = [];
+                }
+                if (
+                    isNaN(batch.numPuzzles) ||
+                    batch.numPuzzles < 1 ||
+                    batch.numPuzzles > 100
+                ) {
+                    setStatus(
+                        "Number of puzzles must be between 1 and 100.",
+                        "error",
+                    );
+                    return;
+                }
+                if (
+                    puzzleRequests.reduce((acc, b) => acc + b.numPuzzles, 0) +
+                        batch.numPuzzles >
+                    MAX_TOTAL_PUZZLES
+                ) {
+                    setStatus("Total puzzles cannot exceed 100.", "error");
+                    return;
+                }
+
+                puzzleRequests.push(batch);
+                updateBatchList();
+                updateCounter();
+                resetForm();
+                setStatus("Batch added!", "success");
+            }
+
+            /**
+             * Clears all added puzzle batches
+             */
+            function handleClearBatches() {
+                puzzleRequests = [];
+                updateBatchList();
+                updateCounter();
+            }
+
+            /**
+             * Resets the "Add Batch" form
+             */
+            function resetForm() {
+                // Don't reset puzzle type
+                gridSizeEl.value = 20;
+                wordCountEl.value = 20;
+                numPuzzlesEl.value = 1;
+                customWordsEl.value = "";
+                wordCountEl.disabled = false;
+            }
+
+            /**
+             * Updates the visible list of added batches
+             */
+            function updateBatchList() {
+                batchListEl.innerHTML = "";
+                if (puzzleRequests.length === 0) {
+                    batchListEl.innerHTML =
+                        '<p class="text-gray-500 text-sm">No puzzle batches added yet.</p>';
+                    return;
+                }
+                puzzleRequests.forEach((batch) => {
+                    const el = document.createElement("div");
+                    el.className =
+                        "flex justify-between items-center bg-white p-2 rounded shadow-sm";
+
+                    let typeDesc = "Unknown";
+                    let wordDesc = "";
+
+                    if (batch.puzzleType === "wordsearch") {
+                        typeDesc = "Word Search";
+                        if (batch.customWords.length > 0) {
+                            wordDesc = `(${batch.customWords.length} custom words)`;
+                        } else {
+                            wordDesc = `(${batch.wordCount} random words)`;
+                        }
+                    } else if (batch.puzzleType === "maze") {
+                        typeDesc = "Maze";
+                        wordDesc = ""; // Mazes don't have words
+                    }
+
+                    el.innerHTML = `
+                    <span class="text-gray-800">
+                        ${batch.numPuzzles} x ${batch.gridSize}x${batch.gridSize} ${typeDesc}
+                        <span class="text-gray-600 text-sm">${wordDesc}</span>
+                    </span>
+                    <button data-id="${batch.id}" class="remove-batch-btn text-red-500 hover:text-red-700 font-bold text-lg">&times;</button>
+                `;
+                    batchListEl.appendChild(el);
+                });
+
+                // Add event listeners to new remove buttons
+                document
+                    .querySelectorAll(".remove-batch-btn")
+                    .forEach((btn) => {
+                        btn.addEventListener("click", (e) => {
+                            const idToRemove = parseInt(
+                                e.target.dataset.id,
+                                10,
+                            );
+                            puzzleRequests = puzzleRequests.filter(
+                                (b) => b.id !== idToRemove,
+                            );
+                            updateBatchList();
+                            updateCounter();
+                        });
+                    });
+            }
 
             /**
              * Updates the total puzzle counter and button state
              */
             function updateCounter() {
-                const count20 = parseInt(count20x20.value, 10) || 0;
-                const count30 = parseInt(count30x30.value, 10) || 0;
-                const count40 = parseInt(count40x40.value, 10) || 0;
-
-                const total = count20 + count30 + count40;
+                const total = puzzleRequests.reduce(
+                    (acc, b) => acc + b.numPuzzles,
+                    0,
+                );
                 const remaining = MAX_TOTAL_PUZZLES - total;
 
                 totalCountEl.textContent = total;
@@ -203,80 +466,108 @@
              * Main function to handle the "Generate" button click
              */
             async function handleGenerateClick() {
-                // Get counts
-                const counts = {
-                    "20x20": parseInt(count20x20.value, 10) || 0,
-                    "30x30": parseInt(count30x30.value, 10) || 0,
-                    "40x40": parseInt(count40x40.value, 10) || 0,
-                };
-
-                // Build request list
-                const puzzleRequests = [];
-                let totalWords = 0;
-                for (const type of ["20x20", "30x30", "40x40"]) {
-                    const count = counts[type];
-                    if (count > 0) {
-                        const config = PUZZLE_CONFIGS[type];
-                        puzzleRequests.push({ type, count, ...config });
-                        totalWords += count * config.wordCount;
-                    }
-                }
-
-                if (totalWords === 0) {
-                    setStatus("Please select at least one puzzle.", "error");
+                if (puzzleRequests.length === 0) {
+                    setStatus("Please add at least one puzzle batch.", "error");
                     return;
                 }
+
+                const totalPuzzles = puzzleRequests.reduce(
+                    (acc, b) => acc + b.numPuzzles,
+                    0,
+                );
 
                 // Disable UI
                 setLoadingState(true);
                 setStatus("Generating... this may take a moment.", "loading");
 
                 try {
-                    // 1. Fetch all words
-                    setStatus(
-                        `Fetching ${totalWords} random words...`,
-                        "loading",
-                    );
-                    const words = await fetchWords(totalWords);
-                    if (!words) return; // Error handled in fetchWords
+                    // 1. Get all words
+                    let totalRandomWords = 0;
+                    puzzleRequests.forEach((batch) => {
+                        if (
+                            batch.puzzleType === "wordsearch" &&
+                            batch.customWords.length === 0
+                        ) {
+                            totalRandomWords +=
+                                batch.numPuzzles * batch.wordCount;
+                        }
+                    });
+
+                    let randomWords = [];
+                    if (totalRandomWords > 0) {
+                        setStatus(
+                            `Fetching ${totalRandomWords} random words...`,
+                            "loading",
+                        );
+                        randomWords = await fetchWords(totalRandomWords);
+                        if (!randomWords) return; // Error handled in fetchWords
+                    }
 
                     const allPuzzles = [];
-                    let currentWordIndex = 0;
+                    let randomWordIndex = 0;
                     let puzzleCounter = 0; // This will be the originalIndex
 
                     // 2. Generate each puzzle
-                    for (const request of puzzleRequests) {
-                        const config = request;
-                        for (let i = 0; i < request.count; i++) {
+                    for (const batch of puzzleRequests) {
+                        for (let i = 0; i < batch.numPuzzles; i++) {
                             setStatus(
-                                `Generating puzzle ${puzzleCounter + 1} of ${totalWords / (config.wordCount / request.count)} (${config.type})...`,
+                                `Generating puzzle ${puzzleCounter + 1} of ${totalPuzzles} (${batch.gridSize}x${batch.gridSize})...`,
                                 "loading",
                             );
-                            const wordsForPuzzle = words.slice(
-                                currentWordIndex,
-                                currentWordIndex + config.wordCount,
-                            );
-                            currentWordIndex += config.wordCount;
 
-                            const puzzleData = generatePuzzle(
-                                wordsForPuzzle,
-                                config.gridSize,
-                            );
+                            let puzzleData = {};
+
+                            if (batch.puzzleType === "wordsearch") {
+                                let wordsForThisBatch = [];
+                                if (batch.customWords.length > 0) {
+                                    wordsForThisBatch = batch.customWords;
+                                } else {
+                                    wordsForThisBatch = randomWords.slice(
+                                        randomWordIndex,
+                                        randomWordIndex + batch.wordCount,
+                                    );
+                                    randomWordIndex += batch.wordCount;
+                                }
+
+                                if (
+                                    wordsForThisBatch.length > batch.wordCount
+                                ) {
+                                    wordsForThisBatch = wordsForThisBatch.slice(
+                                        0,
+                                        batch.wordCount,
+                                    );
+                                }
+                                puzzleData = generateWordSearch(
+                                    wordsForThisBatch,
+                                    batch.gridSize,
+                                );
+                            } else if (batch.puzzleType === "maze") {
+                                puzzleData = generateMaze(batch.gridSize);
+                            }
 
                             allPuzzles.push({
                                 ...puzzleData,
-                                ...config,
+                                puzzleType: batch.puzzleType,
+                                gridSize: batch.gridSize,
+                                wordCount: batch.wordCount, // Will be 0 for mazes
+                                type: `${batch.gridSize}x${batch.gridSize} ${batch.puzzleType}`,
                                 originalIndex: puzzleCounter, // Add the original 0-based index
                             });
                             puzzleCounter++;
                         }
                     }
 
-                    // 3. Create the PDF
-                    setStatus("Compiling PDF...", "loading");
-                    await generatePDF(allPuzzles);
-
-                    setStatus("Success! Check your downloads.", "success");
+                    // 3. Generate Output
+                    if (generateImagesEl.checked) {
+                        setStatus("Generating ZIP file...", "loading");
+                        await generateZIP(allPuzzles);
+                        setStatus("Success! Check your downloads.", "success");
+                    } else {
+                        setStatus("Compiling PDF...", "loading");
+                        const pageSize = pageSizeEl.value;
+                        await generatePDF(allPuzzles, pageSize);
+                        setStatus("Success! Check your downloads.", "success");
+                    }
                 } catch (error) {
                     console.error("Error generating word searches:", error);
                     setStatus(`Error: ${error.message}`, "error");
@@ -286,18 +577,9 @@
                 }
             }
 
-            /**
-         * Selects random words from a built-in dictionary.
-...
-         * @param {number} totalWords - The total number of words to select
-         * @returns {Promise<string[] | null>} A list of words or null on failure
-         */
+            // --- DICTIONARY & WORD FETCHING ---
 
-            let _cachedDictionary = null; // Cache for the parsed dictionary
-
-            // Store the dictionary as a single string to avoid parsing a giant array on load
-            // --- YOU CAN PASTE YOUR 2000+ WORDS HERE ---
-            // (Just make sure they are separated by spaces or new lines)
+            let _cachedDictionary = null;
             const dictionaryString = `
             a
 abandon
@@ -3301,62 +3583,40 @@ youth
 zone
         `;
 
-            /**
-             * Parses the dictionary string *once* and caches the filtered result.
-             */
             function getDictionary() {
                 if (_cachedDictionary) {
                     return _cachedDictionary;
                 }
-
-                // This part only runs once
                 console.log("Parsing dictionary string for the first time...");
-
                 const allWords = dictionaryString
-                    .trim() // Remove leading/trailing whitespace
-                    .split(/\s+/) // Split on one or more whitespace characters
-                    .filter((w) => w.length > 0) // Remove empty strings
-                    .map((w) => w.toLowerCase()); // Normalize to lowercase
-
-                // Filter for valid word lengths
+                    .trim()
+                    .split(/\s+/)
+                    .filter((w) => w.length > 0)
+                    .map((w) => w.toLowerCase());
                 _cachedDictionary = allWords.filter(
                     (w) => w.length >= 3 && w.length <= 12,
                 );
-
                 if (_cachedDictionary.length < 100) {
                     console.warn(
-                        "Dictionary has very few valid words (length > 2 and <= 12).",
+                        "Dictionary has very few valid words (length >= 3 and <= 12).",
                     );
                 }
-
                 return _cachedDictionary;
             }
 
-            /**
-             * Selects random words from the built-in dictionary.
-             * This is now much more efficient for large dictionaries.
-             * @param {number} totalWords - The total number of words to select
-             * @returns {Promise<string[] | null>} A list of words or null on failure
-             */
             async function fetchWords(totalWords) {
                 setStatus("Parsing local dictionary...", "loading");
-
-                // Use a timeout to allow the "Parsing..." message to render
-                return new Promise((resolve, reject) => {
+                return new Promise((resolve) => {
                     setTimeout(() => {
                         try {
-                            const dictionary = getDictionary(); // Gets pre-filtered, cached list
-
+                            const dictionary = getDictionary();
                             if (dictionary.length === 0) {
                                 throw new Error(
                                     "No valid words found in the dictionary.",
                                 );
                             }
 
-                            // Use a Set to efficiently get unique words
                             const selectedWords = new Set();
-
-                            // Safety check: prevent infinite loop if totalWords > dictionary.length
                             const maxAttempts = totalWords * 5;
                             let attempts = 0;
                             const dictionaryLength = dictionary.length;
@@ -3374,7 +3634,6 @@ zone
 
                             let finalWords = Array.from(selectedWords);
 
-                            // If we still don't have enough unique words, fill the rest with random (non-unique) words
                             if (finalWords.length < totalWords) {
                                 console.warn(
                                     `Warning: Could not find ${totalWords} unique words. Adding duplicates.`,
@@ -3383,7 +3642,6 @@ zone
                                     "Warning: Not enough unique words. Adding duplicates.",
                                     "loading",
                                 );
-
                                 while (finalWords.length < totalWords) {
                                     const randomIndex = Math.floor(
                                         Math.random() * dictionaryLength,
@@ -3391,35 +3649,32 @@ zone
                                     finalWords.push(dictionary[randomIndex]);
                                 }
                             }
-
                             resolve(finalWords);
                         } catch (error) {
                             console.error("Dictionary Error:", error);
-                            setStatus(`Error: ${error.message}`, "error");
+                            setStatus(
+                                `Dictionary Error: ${error.message}`,
+                                "error",
+                            );
                             setLoadingState(false);
-                            resolve(null); // Resolve with null to stop execution in handleGenerateClick
+                            resolve(null);
                         }
-                    }, 50); // 50ms delay to allow UI update
+                    }, 50);
                 });
             }
 
-            /**
-             * Generates a single word search puzzle and its solution
-             * @param {string[]} words - The list of words for this puzzle
-             * @param {number} gridSize - The size of the grid (e.g., 20 for 20x20)
-             * @returns {{puzzleGrid: string[][], solutionGrid: string[][], wordList: string[]}}
-             */
-            function generatePuzzle(words, gridSize) {
+            // --- PUZZLE GENERATION LOGIC ---
+
+            function generateWordSearch(words, gridSize) {
                 let puzzleGrid = createEmptyGrid(null, gridSize);
                 let solutionGrid = createEmptyGrid(" ", gridSize);
                 const placedWords = [];
-                const placedWordData = []; // To store coordinates for strikethrough
+                const placedWordData = [];
 
                 for (const word of words) {
                     const upperWord = word.toUpperCase();
                     let placed = false;
 
-                    // Try to place the word multiple times
                     for (let i = 0; i < 100; i++) {
                         const direction =
                             DIRECTIONS[
@@ -3448,7 +3703,6 @@ zone
                             );
                             placedWords.push(upperWord);
 
-                            // Store coordinates for the answer key
                             const endRow =
                                 startRow +
                                 (upperWord.length - 1) * direction[0];
@@ -3470,11 +3724,7 @@ zone
                         console.warn(`Could not place word: ${word}`);
                     }
                 }
-
-                // Fill empty spots in puzzle grid with random letters
                 fillRandomLetters(puzzleGrid);
-
-                // Return the grids and the sorted list of placed words
                 return {
                     puzzleGrid,
                     solutionGrid,
@@ -3483,22 +3733,10 @@ zone
                 };
             }
 
-            /**
-             * Checks if a word can be placed on the grid
-             * @param {string[][]} grid
-             * @param {string} word
-             * @param {number} r - Start row
-             * @param {number} c - Start column
-             * @param {number[]} dir - Direction [dr, dc]
-             * @param {number} gridSize
-             * @returns {boolean}
-             */
             function canPlaceWord(grid, word, r, c, dir, gridSize) {
                 for (let i = 0; i < word.length; i++) {
                     const newR = r + i * dir[0];
                     const newC = c + i * dir[1];
-
-                    // 1. Check bounds
                     if (
                         newR < 0 ||
                         newR >= gridSize ||
@@ -3507,8 +3745,6 @@ zone
                     ) {
                         return false;
                     }
-
-                    // 2. Check collisions
                     const existingChar = grid[newR][newC];
                     if (existingChar !== null && existingChar !== word[i]) {
                         return false;
@@ -3517,15 +3753,6 @@ zone
                 return true;
             }
 
-            /**
-             * Places the word on both the puzzle and solution grids
-             * @param {string[][]} puzzleGrid
-             * @param {string[][]} solutionGrid
-             * @param {string} word
-             * @param {number} r - Start row
-             * @param {number} c - Start column
-             * @param {number[]} dir - Direction [dr, dc]
-             */
             function placeWord(puzzleGrid, solutionGrid, word, r, c, dir) {
                 for (let i = 0; i < word.length; i++) {
                     const newR = r + i * dir[0];
@@ -3535,22 +3762,12 @@ zone
                 }
             }
 
-            /**
-             * Creates an empty 2D array
-             * @param {*} fillWith - The value to fill the grid with
-             * @param {number} gridSize
-             * @returns {string[][]}
-             */
             function createEmptyGrid(fillWith, gridSize) {
                 return Array(gridSize)
                     .fill(null)
                     .map(() => Array(gridSize).fill(fillWith));
             }
 
-            /**
-             * Fills all null spots in a grid with random uppercase letters
-             * @param {string[][]} grid
-             */
             function fillRandomLetters(grid) {
                 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
                 const gridSize = grid.length;
@@ -3566,10 +3783,156 @@ zone
                 }
             }
 
+            // --- MAZE GENERATION LOGIC ---
+
+            function generateMaze(gridSize) {
+                // 1. Create grid
+                const mazeGrid = Array(gridSize)
+                    .fill(null)
+                    .map((_, r) =>
+                        Array(gridSize)
+                            .fill(null)
+                            .map((_, c) => ({
+                                r,
+                                c,
+                                visited: false,
+                                walls: { t: true, r: true, b: true, l: true },
+                            })),
+                    );
+
+                const stack = [];
+                let current = mazeGrid[0][0];
+                current.visited = true;
+
+                const getUnvisitedNeighbors = (r, c) => {
+                    const neighbors = [];
+                    if (r > 0 && !mazeGrid[r - 1][c].visited)
+                        neighbors.push(mazeGrid[r - 1][c]); // Top
+                    if (c < gridSize - 1 && !mazeGrid[r][c + 1].visited)
+                        neighbors.push(mazeGrid[r][c + 1]); // Right
+                    if (r < gridSize - 1 && !mazeGrid[r + 1][c].visited)
+                        neighbors.push(mazeGrid[r + 1][c]); // Bottom
+                    if (c > 0 && !mazeGrid[r][c - 1].visited)
+                        neighbors.push(mazeGrid[r][c - 1]); // Left
+                    return neighbors;
+                };
+
+                const removeWalls = (a, b) => {
+                    const dr = a.r - b.r;
+                    const dc = a.c - b.c;
+                    if (dr === 1) {
+                        a.walls.t = false;
+                        b.walls.b = false;
+                    } // a is below b
+                    else if (dr === -1) {
+                        a.walls.b = false;
+                        b.walls.t = false;
+                    } // a is above b
+                    else if (dc === 1) {
+                        a.walls.l = false;
+                        b.walls.r = false;
+                    } // a is right of b
+                    else if (dc === -1) {
+                        a.walls.r = false;
+                        b.walls.l = false;
+                    } // a is left of b
+                };
+
+                // 2. Recursive backtracking
+                while (true) {
+                    const neighbors = getUnvisitedNeighbors(
+                        current.r,
+                        current.c,
+                    );
+                    if (neighbors.length > 0) {
+                        const chosen =
+                            neighbors[
+                                Math.floor(Math.random() * neighbors.length)
+                            ];
+                        stack.push(current);
+                        removeWalls(current, chosen);
+                        current = chosen;
+                        current.visited = true;
+                    } else if (stack.length > 0) {
+                        current = stack.pop();
+                    } else {
+                        break; // All cells visited
+                    }
+                }
+
+                // 3. Add entrance and exit
+                mazeGrid[0][0].walls.l = false;
+                mazeGrid[gridSize - 1][gridSize - 1].walls.r = false;
+
+                // 4. Find solution path using Breadth-First Search (BFS)
+                const solutionPath = findMazeSolution(mazeGrid, gridSize);
+
+                return { mazeGrid, solutionPath, wordList: [] }; // No words for mazes
+            }
+
+            function findMazeSolution(mazeGrid, gridSize) {
+                const queue = [[[0, 0]]]; // A queue of paths
+                const visited = new Set(["0,0"]);
+                const endR = gridSize - 1;
+                const endC = gridSize - 1;
+
+                while (queue.length > 0) {
+                    const path = queue.shift();
+                    const [r, c] = path[path.length - 1];
+
+                    if (r === endR && c === endC) {
+                        return path; // Found the end!
+                    }
+
+                    const cell = mazeGrid[r][c];
+
+                    // Check neighbors
+                    // Top
+                    if (
+                        r > 0 &&
+                        !cell.walls.t &&
+                        !visited.has(`${r - 1},${c}`)
+                    ) {
+                        visited.add(`${r - 1},${c}`);
+                        queue.push([...path, [r - 1, c]]);
+                    }
+                    // Right
+                    if (
+                        c < gridSize - 1 &&
+                        !cell.walls.r &&
+                        !visited.has(`${r},${c + 1}`)
+                    ) {
+                        visited.add(`${r},${c + 1}`);
+                        queue.push([...path, [r, c + 1]]);
+                    }
+                    // Bottom
+                    if (
+                        r < gridSize - 1 &&
+                        !cell.walls.b &&
+                        !visited.has(`${r + 1},${c}`)
+                    ) {
+                        visited.add(`${r + 1},${c}`);
+                        queue.push([...path, [r + 1, c]]);
+                    }
+                    // Left
+                    if (
+                        c > 0 &&
+                        !cell.walls.l &&
+                        !visited.has(`${r},${c - 1}`)
+                    ) {
+                        visited.add(`${r},${c - 1}`);
+                        queue.push([...path, [r, c - 1]]);
+                    }
+                }
+                return []; // No path found (should be impossible for this algorithm)
+            }
+
+            // --- PDF DRAWING LOGIC ---
+
             /**
-             * Helper function to draw a single answer grid within a bounding box
+             * Draws a single word search answer grid
              */
-            function drawAnswerGrid(
+            function drawWordSearchAnswerGrid(
                 doc,
                 puzzle,
                 boxX,
@@ -3579,318 +3942,676 @@ zone
                 title,
             ) {
                 const { gridSize, puzzleGrid, placedWordData } = puzzle;
-
-                // --- 1. Draw Title for this grid ---
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "bold");
                 doc.text(title, boxX + boxW / 2, boxY, { align: "center" });
-
-                const gridTopY_inBox = boxY + 8; // 8mm for title
+                const gridTopY_inBox = boxY + 8;
                 const availableGridHeight = boxH - 8;
-
-                // --- 2. Calculate Dynamic Font Size ---
                 doc.setFont("courier", "normal");
                 const gridString = Array(gridSize).fill("W").join(" ");
                 const scaleFactor = doc.internal.scaleFactor;
-
                 const fontMaxWidth =
                     (boxW * scaleFactor) / doc.getStringUnitWidth(gridString);
                 const lineH_at_1pt = 1 * 0.352778 * 1.1;
                 const fontMaxHeight =
                     availableGridHeight / (gridSize * lineH_at_1pt);
-
                 let gridFontSize = Math.min(fontMaxWidth, fontMaxHeight);
-                gridFontSize = Math.max(2, Math.min(10, gridFontSize)); // Clamp 2pt to 10pt
-
+                gridFontSize = Math.max(2, Math.min(10, gridFontSize));
                 doc.setFontSize(gridFontSize);
-
-                // --- 3. Calculate Final Grid Dimensions & Centering ---
                 const lineH = gridFontSize * 0.352778 * 1.1;
                 const gridTextWidth =
                     (doc.getStringUnitWidth(gridString) * gridFontSize) /
                     scaleFactor;
-                const gridX_inBox = boxX + (boxW - gridTextWidth) / 2; // Center horizontally in box
-
+                const gridX_inBox = boxX + (boxW - gridTextWidth) / 2;
                 const colWidth =
                     (doc.getStringUnitWidth("W ") * gridFontSize) / scaleFactor;
                 const charWidth =
                     (doc.getStringUnitWidth("W") * gridFontSize) / scaleFactor;
 
-                // --- 4. Draw Grid ---
                 puzzleGrid.forEach((row, r) => {
                     const yPos = gridTopY_inBox + r * lineH;
                     if (yPos < boxY + boxH) {
-                        // Only draw if it fits in the box
                         doc.text(row.join(" "), gridX_inBox, yPos);
                     }
                 });
 
-                // --- 5. Draw Strikethroughs ---
-                doc.setDrawColor(0, 0, 0); // black line
-                doc.setLineWidth(0.3); // 0.3mm thick line
-
-                const yOffset = -(gridFontSize * 0.352778 * 0.3); // Vertical center of line
-                const xOffset = charWidth / 2; // Horizontal center of char
-
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.3);
+                const yOffset = -(gridFontSize * 0.352778 * 0.3);
+                const xOffset = charWidth / 2;
                 placedWordData.forEach((word) => {
-                    // Calculate start (x1, y1) and end (x2, y2) coords
                     const x1 = gridX_inBox + word.c1 * colWidth + xOffset;
                     const y1 = gridTopY_inBox + word.r1 * lineH + yOffset;
                     const x2 = gridX_inBox + word.c2 * colWidth + xOffset;
                     const y2 = gridTopY_inBox + word.r2 * lineH + yOffset;
-
-                    // Only draw line if it's within the box
                     if (y1 < boxY + boxH && y2 < boxY + boxH) {
-                        doc.line(x1, y1, x2, y2); // Draw the line
+                        doc.line(x1, y1, x2, y2);
                     }
                 });
             }
 
             /**
-             * Compiles all puzzles and solutions into a single PDF
-             * @param {object[]} allPuzzles
+             * Draws a single maze (or solution) grid
              */
-            async function generatePDF(allPuzzles) {
-                // Dynamically get the jsPDF object from the window
+            function drawMazeGrid(
+                doc,
+                puzzle,
+                boxX,
+                boxY,
+                boxW,
+                boxH,
+                title,
+                isSolution,
+            ) {
+                const { gridSize, mazeGrid, solutionPath } = puzzle;
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text(title, boxX + boxW / 2, boxY, { align: "center" });
+
+                const gridTopY_inBox = boxY + 8;
+                const availableGridHeight = boxH - 8;
+
+                // Calculate cell size
+                const cellSizeW = boxW / gridSize;
+                const cellSizeH = availableGridHeight / gridSize;
+                const cellSize = Math.min(cellSizeW, cellSizeH);
+
+                // Center the grid
+                const gridTotalW = cellSize * gridSize;
+                const gridTotalH = cellSize * gridSize;
+                const gridX = boxX + (boxW - gridTotalW) / 2;
+                const gridY =
+                    gridTopY_inBox + (availableGridHeight - gridTotalH) / 2;
+
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.2);
+
+                for (let r = 0; r < gridSize; r++) {
+                    for (let c = 0; c < gridSize; c++) {
+                        const cell = mazeGrid[r][c];
+                        const x = gridX + c * cellSize;
+                        const y = gridY + r * cellSize;
+
+                        if (cell.walls.t) doc.line(x, y, x + cellSize, y);
+                        if (cell.walls.r)
+                            doc.line(
+                                x + cellSize,
+                                y,
+                                x + cellSize,
+                                y + cellSize,
+                            );
+                        if (cell.walls.b)
+                            doc.line(
+                                x,
+                                y + cellSize,
+                                x + cellSize,
+                                y + cellSize,
+                            );
+                        if (cell.walls.l) doc.line(x, y, x, y + cellSize);
+                    }
+                }
+
+                if (isSolution && solutionPath.length > 0) {
+                    doc.setDrawColor(255, 0, 0); // Red
+                    doc.setLineWidth(cellSize * 0.2); // Make line thick
+
+                    // Use doc.line() for each segment
+                    for (let i = 0; i < solutionPath.length - 1; i++) {
+                        const [r1, c1] = solutionPath[i];
+                        const [r2, c2] = solutionPath[i + 1];
+
+                        const x1 = gridX + (c1 + 0.5) * cellSize;
+                        const y1 = gridY + (r1 + 0.5) * cellSize;
+                        const x2 = gridX + (c2 + 0.5) * cellSize;
+                        const y2 = gridY + (r2 + 0.5) * cellSize;
+
+                        doc.line(x1, y1, x2, y2);
+                    }
+                }
+            }
+
+            async function generatePDF(allPuzzles, pageSize) {
                 const { jsPDF } = window.jspdf;
-                // Default is portrait, 'mm', 'a4'
-                const doc = new jsPDF();
+                const doc = new jsPDF({
+                    format: pageSize,
+                    orientation: "portrait",
+                });
 
                 const xMargin = 6.35;
                 const yMargin = 6.35;
                 const pageW = doc.internal.pageSize.getWidth();
                 const pageH = doc.internal.pageSize.getHeight();
 
-                /**
-                 * Draws a single page (puzzle or solution)
-                 * @param {object} puzzle - The puzzle data
-                 * @param {boolean} addPage - Flag to control adding a new page
-                 */
-                const drawPuzzlePage = (puzzle, addPage = true) => {
+                const drawWordSearchPage = (puzzle, addPage = true) => {
                     if (addPage) {
                         doc.addPage();
                     }
-
                     const { gridSize, wordList, puzzleGrid, originalIndex } =
                         puzzle;
-
-                    // --- 1. Set Margins (0.25 inch) ---
                     const availableWidth = pageW - 2 * xMargin;
-
-                    // --- 2. Draw Title ---
                     const title = `Word Search Puzzle ${originalIndex + 1} (${puzzle.type})`;
                     let titleTopY = yMargin + 10;
-
                     doc.setFontSize(18);
                     doc.setFont("helvetica", "bold");
                     doc.text(title, pageW / 2, titleTopY, { align: "center" });
-                    const gridTopY = titleTopY + 15; // 15mm gap
-
-                    // --- 3. Calculate Dynamic Grid Font Size ---
+                    const gridTopY = titleTopY + 15;
                     doc.setFont("courier", "normal");
                     const gridString = Array(gridSize).fill("W").join(" ");
                     const scaleFactor = doc.internal.scaleFactor;
-
-                    // Use top 60% of the page for the grid
                     let availableGridHeight = pageH * 0.6 - gridTopY;
                     const fontMaxWidth =
                         (availableWidth * scaleFactor) /
                         doc.getStringUnitWidth(gridString);
-                    const lineH_at_1pt = 1 * 0.352778 * 1.1; // 1pt -> mm * 1.1 line spacing
+                    const lineH_at_1pt = 1 * 0.352778 * 1.1;
                     const fontMaxHeight =
                         availableGridHeight / (gridSize * lineH_at_1pt);
-
                     let gridFontSize = Math.min(fontMaxWidth, fontMaxHeight);
-                    gridFontSize = Math.max(5, Math.min(16, gridFontSize)); // Clamp font size
-
+                    gridFontSize = Math.max(5, Math.min(16, gridFontSize));
                     doc.setFontSize(gridFontSize);
-
-                    // --- 4. Calculate Final Grid Dimensions & Centering ---
                     const lineH = gridFontSize * 0.352778 * 1.1;
                     const gridTextWidth =
                         (doc.getStringUnitWidth(gridString) * gridFontSize) /
                         scaleFactor;
                     const gridX =
-                        xMargin + (availableWidth - gridTextWidth) / 2; // Center horizontally
-
-                    // --- 5. Draw Grid ---
+                        xMargin + (availableWidth - gridTextWidth) / 2;
                     puzzleGrid.forEach((row, r) => {
                         doc.text(row.join(" "), gridX, gridTopY + r * lineH);
                     });
-
-                    // --- 7. Draw Word List ---
                     doc.setFont("helvetica", "normal");
-                    const wordListFontSize = Math.max(8, gridFontSize - 2); // Slightly smaller font
+                    const wordListFontSize = Math.max(8, gridFontSize - 2);
                     doc.setFontSize(wordListFontSize);
-
                     const wordListLineH = wordListFontSize * 0.352778 * 1.2;
                     const wordListY = pageH * 0.6 + 10;
-
-                    const colCount = 4; // Always use 4 columns for word list
-                    const words = wordList; // Already sorted!
+                    const colCount = 4;
+                    const words = wordList;
                     const rowCountPerCol = Math.ceil(words.length / colCount);
                     const colWidth = availableWidth / colCount;
-
                     words.forEach((word, i) => {
                         const colIndex = Math.floor(i / rowCountPerCol);
                         const rowIndex = i % rowCountPerCol;
-
                         const x = xMargin + colIndex * colWidth + colWidth / 2;
                         const y = wordListY + rowIndex * wordListLineH;
-
                         if (y < pageH - yMargin) {
-                            // Check if word list goes off the page
                             doc.text(word, x, y, { align: "center" });
                         }
                     });
                 };
 
-                // --- 1. Add all puzzle pages ---
+                const drawMazePage = (puzzle, addPage = true) => {
+                    if (addPage) {
+                        doc.addPage();
+                    }
+                    const { originalIndex } = puzzle;
+                    const title = `Maze Puzzle ${originalIndex + 1} (${puzzle.type})`;
+                    const boxX = xMargin;
+                    const boxY = yMargin;
+                    const boxW = pageW - 2 * xMargin;
+                    const boxH = pageH - 2 * yMargin;
+                    // Draw maze without solution path
+                    drawMazeGrid(
+                        doc,
+                        puzzle,
+                        boxX,
+                        boxY,
+                        boxW,
+                        boxH,
+                        title,
+                        false,
+                    );
+                };
+
+                // --- 1. Draw all Puzzle Pages ---
                 allPuzzles.forEach((puzzle, index) => {
-                    drawPuzzlePage(puzzle, index > 0);
+                    if (puzzle.puzzleType === "wordsearch") {
+                        drawWordSearchPage(puzzle, index > 0);
+                    } else if (puzzle.puzzleType === "maze") {
+                        drawMazePage(puzzle, index > 0);
+                    }
                 });
 
-                // --- 2. Add all solution pages ---
+                // --- 2. Draw all Answer Key Pages ---
 
-                // --- 2a. Process 2x2 Grids (20x20, 30x30) ---
-                const puzzles2x2 = allPuzzles.filter(
-                    (p) => p.keyLayout === "2x2",
-                );
+                // New rule: <= 30 is 2x2, > 30 is 1x2
+                const puzzles2x2 = allPuzzles.filter((p) => p.gridSize <= 30);
                 if (puzzles2x2.length > 0) {
                     doc.addPage();
                     doc.setFontSize(22);
                     doc.setFont("helvetica", "bold");
                     doc.text(
-                        "Answer Keys (20x20 & 30x30)",
+                        "Answer Keys (10x10 - 30x30)",
                         pageW / 2,
                         yMargin + 10,
                         { align: "center" },
                     );
-
-                    const mainTitleH = 20; // 10mm margin + 10mm title
+                    const mainTitleH = 20;
                     const availableW = pageW - 2 * xMargin;
                     const availableH = pageH - yMargin - mainTitleH;
                     const quadW = availableW / 2;
                     const quadH = availableH / 2;
-                    const padding = 5; // 5mm padding
-
+                    const padding = 5;
                     puzzles2x2.forEach((puzzle, index) => {
-                        const gridIndex = index % 4; // 0, 1, 2, or 3
+                        const gridIndex = index % 4;
                         if (index > 0 && gridIndex === 0) {
                             doc.addPage();
                         }
-
                         let quadX, quadY;
                         if (gridIndex === 0) {
                             quadX = xMargin;
                             quadY = yMargin + mainTitleH;
-                        } // Top-left
-                        else if (gridIndex === 1) {
+                        } else if (gridIndex === 1) {
                             quadX = xMargin + quadW;
                             quadY = yMargin + mainTitleH;
-                        } // Top-right
-                        else if (gridIndex === 2) {
+                        } else if (gridIndex === 2) {
                             quadX = xMargin;
                             quadY = yMargin + mainTitleH + quadH;
-                        } // Bottom-left
-                        else {
+                        } else {
                             quadX = xMargin + quadW;
                             quadY = yMargin + mainTitleH + quadH;
-                        } // Bottom-right
-
+                        }
                         const boxX = quadX + padding;
                         const boxY = quadY + padding;
                         const boxW = quadW - 2 * padding;
                         const boxH = quadH - 2 * padding;
                         const title = `Puzzle ${puzzle.originalIndex + 1} (${puzzle.type})`;
 
-                        drawAnswerGrid(
-                            doc,
-                            puzzle,
-                            boxX,
-                            boxY,
-                            boxW,
-                            boxH,
-                            title,
-                        );
+                        if (puzzle.puzzleType === "wordsearch") {
+                            drawWordSearchAnswerGrid(
+                                doc,
+                                puzzle,
+                                boxX,
+                                boxY,
+                                boxW,
+                                boxH,
+                                title,
+                            );
+                        } else if (puzzle.puzzleType === "maze") {
+                            drawMazeGrid(
+                                doc,
+                                puzzle,
+                                boxX,
+                                boxY,
+                                boxW,
+                                boxH,
+                                title,
+                                true,
+                            ); // true = draw solution
+                        }
                     });
                 }
 
-                // --- 2b. Process 1x2 Grids (40x40) ---
-                const puzzles1x2 = allPuzzles.filter(
-                    (p) => p.keyLayout === "1x2",
-                );
+                const puzzles1x2 = allPuzzles.filter((p) => p.gridSize > 30);
                 if (puzzles1x2.length > 0) {
                     doc.addPage();
                     doc.setFontSize(22);
                     doc.setFont("helvetica", "bold");
-                    doc.text("Answer Keys (40x40)", pageW / 2, yMargin + 10, {
-                        align: "center",
-                    });
-
+                    doc.text(
+                        "Answer Keys (31x31 - 50x50)",
+                        pageW / 2,
+                        yMargin + 10,
+                        { align: "center" },
+                    );
                     const mainTitleH = 20;
                     const availableW = pageW - 2 * xMargin;
                     const availableH = pageH - yMargin - mainTitleH;
-                    const quadW = availableW; // Full width
-                    const quadH = availableH / 2; // Half height
+                    const quadW = availableW;
+                    const quadH = availableH / 2;
                     const padding = 5;
-
                     puzzles1x2.forEach((puzzle, index) => {
-                        const gridIndex = index % 2; // 0 or 1
+                        const gridIndex = index % 2;
                         if (index > 0 && gridIndex === 0) {
                             doc.addPage();
                         }
-
                         let quadX = xMargin;
                         let quadY =
                             gridIndex === 0
-                                ? yMargin + mainTitleH // Top
-                                : yMargin + mainTitleH + quadH; // Bottom
-
+                                ? yMargin + mainTitleH
+                                : yMargin + mainTitleH + quadH;
                         const boxX = quadX + padding;
                         const boxY = quadY + padding;
                         const boxW = quadW - 2 * padding;
                         const boxH = quadH - 2 * padding;
                         const title = `Puzzle ${puzzle.originalIndex + 1} (${puzzle.type})`;
 
-                        drawAnswerGrid(
-                            doc,
-                            puzzle,
-                            boxX,
-                            boxY,
-                            boxW,
-                            boxH,
-                            title,
-                        );
+                        if (puzzle.puzzleType === "wordsearch") {
+                            drawWordSearchAnswerGrid(
+                                doc,
+                                puzzle,
+                                boxX,
+                                boxY,
+                                boxW,
+                                boxH,
+                                title,
+                            );
+                        } else if (puzzle.puzzleType === "maze") {
+                            drawMazeGrid(
+                                doc,
+                                puzzle,
+                                boxX,
+                                boxY,
+                                boxW,
+                                boxH,
+                                title,
+                                true,
+                            ); // true = draw solution
+                        }
                     });
                 }
 
-                // --- 3. Save the PDF ---
-                doc.save("Word-Search-Puzzles.pdf");
+                doc.save("Word-Search-And-Maze-Puzzles.pdf");
+            }
+
+            // --- ZIP/IMAGE DRAWING LOGIC ---
+
+            function drawWordSearchToCanvas(canvas, ctx, puzzle, isSolution) {
+                return new Promise((resolve) => {
+                    const {
+                        gridSize,
+                        wordList,
+                        puzzleGrid,
+                        placedWordData,
+                        originalIndex,
+                    } = puzzle;
+
+                    const W = 1200;
+                    const H = 1500;
+                    canvas.width = W;
+                    canvas.height = H;
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, W, H);
+
+                    const xMargin = 50;
+                    const yMargin = 50;
+                    const availableWidth = W - 2 * xMargin;
+
+                    const title = isSolution
+                        ? `Answer Key ${originalIndex + 1} (${puzzle.type})`
+                        : `Word Search Puzzle ${originalIndex + 1} (${puzzle.type})`;
+                    ctx.fillStyle = "black";
+                    ctx.font = "bold 48px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText(title, W / 2, yMargin + 48);
+                    const gridTopY = yMargin + 100;
+
+                    ctx.font = '10px "Courier New"';
+                    const gridString = Array(gridSize).fill("W").join(" ");
+                    const textMetrics = ctx.measureText(gridString);
+                    const textWidth_at_10px = textMetrics.width;
+
+                    let availableGridHeight = H * 0.6 - gridTopY;
+                    if (isSolution) {
+                        availableGridHeight = H - gridTopY - yMargin;
+                    }
+
+                    const fontMaxWidth =
+                        (availableWidth / textWidth_at_10px) * 10;
+                    const lineH_at_1px = 1.1;
+                    const fontMaxHeight =
+                        availableGridHeight / (gridSize * lineH_at_1px);
+
+                    let gridFontSize = Math.min(fontMaxWidth, fontMaxHeight);
+                    gridFontSize = Math.max(8, gridFontSize);
+
+                    ctx.font = `bold ${gridFontSize}px "Courier New"`;
+
+                    const lineH = gridFontSize * 1.1;
+                    const gridTextWidth = ctx.measureText(gridString).width;
+                    const gridX =
+                        xMargin + (availableWidth - gridTextWidth) / 2;
+
+                    const colWidth = ctx.measureText("W ").width;
+                    const charWidth = ctx.measureText("W").width;
+
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "left";
+                    puzzleGrid.forEach((row, r) => {
+                        ctx.fillText(
+                            row.join(" "),
+                            gridX,
+                            gridTopY + r * lineH,
+                        );
+                    });
+
+                    if (isSolution) {
+                        ctx.strokeStyle = "black";
+                        ctx.lineWidth = 3;
+
+                        const yOffset = -(gridFontSize * 0.3);
+                        const xOffset = charWidth / 2;
+
+                        placedWordData.forEach((word) => {
+                            const x1 = gridX + word.c1 * colWidth + xOffset;
+                            const y1 = gridTopY + word.r1 * lineH + yOffset;
+                            const x2 = gridX + word.c2 * colWidth + xOffset;
+                            const y2 = gridTopY + word.r2 * lineH + yOffset;
+
+                            ctx.beginPath();
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                            ctx.stroke();
+                        });
+                    }
+
+                    if (!isSolution) {
+                        ctx.fillStyle = "black";
+                        ctx.textAlign = "center";
+                        const wordListFontSize = Math.max(
+                            16,
+                            gridFontSize * 0.8,
+                        );
+                        ctx.font = `${wordListFontSize}px Arial`;
+
+                        const wordListLineH = wordListFontSize * 1.2;
+                        const wordListY = H * 0.6 + 40;
+
+                        const colCount = 4;
+                        const words = wordList;
+                        const rowCountPerCol = Math.ceil(
+                            words.length / colCount,
+                        );
+                        const colWidth = availableWidth / colCount;
+
+                        words.forEach((word, i) => {
+                            const colIndex = Math.floor(i / rowCountPerCol);
+                            const rowIndex = i % rowCountPerCol;
+
+                            const x =
+                                xMargin + colIndex * colWidth + colWidth / 2;
+                            const y = wordListY + rowIndex * wordListLineH;
+
+                            if (y < H - yMargin) {
+                                ctx.fillText(word, x, y);
+                            }
+                        });
+                    }
+
+                    resolve();
+                });
+            }
+
+            function drawMazeToCanvas(canvas, ctx, puzzle, isSolution) {
+                return new Promise((resolve) => {
+                    const { gridSize, mazeGrid, solutionPath, originalIndex } =
+                        puzzle;
+
+                    const W = 1200;
+                    const H = 1500;
+                    canvas.width = W;
+                    canvas.height = H;
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, W, H);
+
+                    const xMargin = 50;
+                    const yMargin = 50;
+                    const availableWidth = W - 2 * xMargin;
+                    const availableHeight = H - 2 * yMargin;
+
+                    const title = isSolution
+                        ? `Answer Key ${originalIndex + 1} (${puzzle.type})`
+                        : `Maze Puzzle ${originalIndex + 1} (${puzzle.type})`;
+                    ctx.fillStyle = "black";
+                    ctx.font = "bold 48px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText(title, W / 2, yMargin + 48);
+
+                    const gridTopY = yMargin + 100;
+                    const availableGridHeight = H - gridTopY - yMargin;
+
+                    const cellSizeW = availableWidth / gridSize;
+                    const cellSizeH = availableGridHeight / gridSize;
+                    const cellSize = Math.min(cellSizeW, cellSizeH);
+
+                    const gridTotalW = cellSize * gridSize;
+                    const gridTotalH = cellSize * gridSize;
+                    const gridX = xMargin + (availableWidth - gridTotalW) / 2;
+                    const gridY =
+                        gridTopY + (availableGridHeight - gridTotalH) / 2;
+
+                    ctx.strokeStyle = "black";
+                    ctx.lineWidth = 2;
+
+                    for (let r = 0; r < gridSize; r++) {
+                        for (let c = 0; c < gridSize; c++) {
+                            const cell = mazeGrid[r][c];
+                            const x = gridX + c * cellSize;
+                            const y = gridY + r * cellSize;
+
+                            ctx.beginPath();
+                            if (cell.walls.t) {
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x + cellSize, y);
+                            }
+                            if (cell.walls.r) {
+                                ctx.moveTo(x + cellSize, y);
+                                ctx.lineTo(x + cellSize, y + cellSize);
+                            }
+                            if (cell.walls.b) {
+                                ctx.moveTo(x, y + cellSize);
+                                ctx.lineTo(x + cellSize, y + cellSize);
+                            }
+                            if (cell.walls.l) {
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x, y + cellSize);
+                            }
+                            ctx.stroke();
+                        }
+                    }
+
+                    if (isSolution && solutionPath.length > 0) {
+                        ctx.strokeStyle = "red";
+                        ctx.lineWidth = cellSize * 0.3;
+                        ctx.lineCap = "round";
+                        ctx.lineJoin = "round";
+
+                        ctx.beginPath();
+                        const start = solutionPath[0];
+                        const startX = gridX + (start[1] + 0.5) * cellSize;
+                        const startY = gridY + (start[0] + 0.5) * cellSize;
+                        ctx.moveTo(startX, startY);
+
+                        for (let i = 1; i < solutionPath.length; i++) {
+                            const [r, c] = solutionPath[i];
+                            const x = gridX + (c + 0.5) * cellSize;
+                            const y = gridY + (r + 0.5) * cellSize;
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.stroke();
+                    }
+
+                    resolve();
+                });
+            }
+
+            /**
+             * Generates a ZIP file with all puzzles and answers as images
+             */
+            async function generateZIP(allPuzzles) {
+                const zip = new JSZip();
+                const puzzleFolder = zip.folder("Puzzles");
+                const answerFolder = zip.folder("AnswerKeys");
+
+                // Create one canvas to reuse
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                for (let i = 0; i < allPuzzles.length; i++) {
+                    const puzzle = allPuzzles[i];
+                    const index = puzzle.originalIndex;
+
+                    setStatus(
+                        `Generating image ${i * 2 + 1} of ${allPuzzles.length * 2}...`,
+                        "loading",
+                    );
+
+                    // 1. Draw and add puzzle
+                    if (puzzle.puzzleType === "wordsearch") {
+                        await drawWordSearchToCanvas(
+                            canvas,
+                            ctx,
+                            puzzle,
+                            false,
+                        );
+                    } else {
+                        await drawMazeToCanvas(canvas, ctx, puzzle, false);
+                    }
+                    const puzzleBlob = await new Promise((resolve) =>
+                        canvas.toBlob(resolve, "image/png"),
+                    );
+                    puzzleFolder.file(
+                        `Puzzle_${index + 1}_(${puzzle.type}).png`,
+                        puzzleBlob,
+                    );
+
+                    setStatus(
+                        `Generating image ${i * 2 + 2} of ${allPuzzles.length * 2}...`,
+                        "loading",
+                    );
+
+                    // 2. Draw and add answer key
+                    if (puzzle.puzzleType === "wordsearch") {
+                        await drawWordSearchToCanvas(canvas, ctx, puzzle, true);
+                    } else {
+                        await drawMazeToCanvas(canvas, ctx, puzzle, true);
+                    }
+                    const answerBlob = await new Promise((resolve) =>
+                        canvas.toBlob(resolve, "image/png"),
+                    );
+                    answerFolder.file(
+                        `AnswerKey_${index + 1}_(${puzzle.type}).png`,
+                        answerBlob,
+                    );
+                }
+
+                setStatus("Compressing ZIP file...", "loading");
+                const content = await zip.generateAsync({ type: "blob" });
+
+                // Trigger download
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "Puzzles-And-Mazes.zip";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
             }
 
             /**
              * Sets the loading state of the UI
-             * @param {boolean} isLoading
              */
             function setLoadingState(isLoading) {
                 generateBtn.disabled = isLoading;
-                [count20x20, count30x30, count40x40].forEach((input) => {
-                    input.disabled = isLoading;
-                });
+                addBatchBtn.disabled = isLoading;
+                clearBatchesBtn.disabled = isLoading;
 
                 if (isLoading) {
                     generateBtn.textContent = "Generating...";
                 } else {
-                    generateBtn.textContent = "Generate PDF";
+                    generateBtn.textContent = "Generate";
                     updateCounter(); // Re-check button state
                 }
             }
 
             /**
              * Updates the status message
-             * @param {string} message
-             * @param {'loading' | 'error' | 'success' | 'normal'} type
              */
             function setStatus(message, type = "normal") {
                 statusEl.textContent = message;
